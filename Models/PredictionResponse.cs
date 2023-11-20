@@ -2,19 +2,25 @@
 {
     public class PredictionResponse
     {
-        public bool Success { get; private set; }
-        public string SlugName { get; private set; }
+        public string Message { get; private set; }
+        public List<Probabilities> Probabilities { get; private set; }
 
-        public PredictionResponse()
+        public PredictionResponse(string message)
         {
-            Success = false;
-            SlugName = "Not Found!";
+            Message = message;
+            Probabilities = new List<Probabilities>();
         }
 
-        public PredictionResponse(bool success, string name)
+        public PredictionResponse(string message, List<Probabilities> probabilities)
         {
-            Success = success;
-            SlugName = name;
+            Message = message;
+            Probabilities = probabilities;
         }
+    }
+
+    public class Probabilities
+    {
+        public string Label { get; set; }
+        public int Probability { get; set; }
     }
 }

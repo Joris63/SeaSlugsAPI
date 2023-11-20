@@ -27,7 +27,7 @@ namespace SeaSlugAPI.Controllers
 
                 PredictionResponse response = await _azureService.GetPrediction(base64String);
 
-                if (response.Success)
+                if (response.Probabilities.Count > 0)
                 {
                     return Ok(response);
                 }

@@ -13,12 +13,12 @@
 
         public void InitializeDictionary()
         {
-            Data.Add(0, "JanolusCristatus");
-            Data.Add(1, "JanolusHyalinus");
-            Data.Add(2, "AeolidiellaGlauca");
-            Data.Add(3, "AeolidiaPapillosa");
-            Data.Add(4, "AeolidiaPapillosaComplex");
-            Data.Add(5, "AeolidiaFilomenae");
+            Data.Add(0, "Aeolidia Filomenae");
+            Data.Add(1, "Aeolidia Papillosa");
+            Data.Add(2, "Aeolidia Papillosa Complex");
+            Data.Add(3, "Aeolidiella Glauca");
+            Data.Add(4, "Janolus Cristatus");
+            Data.Add(5, "Janolus Hyalinus");
         }
     }
 }

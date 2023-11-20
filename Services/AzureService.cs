@@ -15,12 +15,12 @@ namespace SeaSlugAPI.Services
         {
             httpClient = new HttpClient();
 
-            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer UEIJaOvA8DDFTYE5YrQ6aw5LsrOxuAKr");
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer a6SmZE0hC0d6RscBwYzR0qJDuNTFPUN3");
         }
 
         public async Task<PredictionResponse> GetPrediction(string image)
         {
-            string apiEndpoint = "https://sea-slug-prediction.germanywestcentral.inference.ml.azure.com/score";
+            string apiEndpoint = "https://sea-slug-tpije.germanywestcentral.inference.ml.azure.com/score";
 
             var content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(image), System.Text.Encoding.UTF8, "application/json");
 
@@ -35,18 +35,29 @@ namespace SeaSlugAPI.Services
 
                 SeaSlugDictionary dictionary = new SeaSlugDictionary();
 
-                if (dictionary.Data.TryGetValue(responseObject.Data, out var slugName))
+                List<Probabilities> probabilities = new List<Probabilities>();
+
+                foreach (PredictionProbabilities probability in responseObject.ParsedData)
                 {
-                    return new PredictionResponse(true, slugName);
+                    if(dictionary.Data.TryGetValue(probability.Label, out var slugName))
+                    {
+                        probabilities.Add(new Probabilities() { Label = slugName, Probability = (int)Math.Round(probability.Probability * 100) });
+                    }
+                }
+
+                if (probabilities.Count > 0)
+                {
+                    return new PredictionResponse(responseObject.Message, probabilities);
                 }
                 else
                 {
-                    return new PredictionResponse();
+                    return new PredictionResponse(responseObject.Message);
                 }
             }
             else
             {
-                return new PredictionResponse();
+                string errorResponse = await response.Content.ReadAsStringAsync();
+                return new PredictionResponse(errorResponse);
             }
         }
     }
