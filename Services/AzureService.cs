@@ -1,10 +1,11 @@
-﻿using SeaSlugAPI.Models;
+﻿using SeaSlugAPI.Helpers;
+using SeaSlugAPI.Models;
 
 namespace SeaSlugAPI.Services
 {
     public interface IAzureService
     {
-        Task<PredictionResponse> GetPrediction(string id);
+        Task<BaseResponse> GetPrediction(IFormFile image);
     }
 
     public class AzureService : IAzureService
@@ -15,15 +16,21 @@ namespace SeaSlugAPI.Services
         {
             httpClient = new HttpClient();
 
-            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer a6SmZE0hC0d6RscBwYzR0qJDuNTFPUN3");
+            // Get the authorization key from appsettings.json and add it to the http request header
+            var authorizationKey = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("Secrets")["AzureEndpointKey"];
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authorizationKey}");
         }
 
-        public async Task<PredictionResponse> GetPrediction(string image)
+        public async Task<BaseResponse> GetPrediction(IFormFile image)
         {
-            string apiEndpoint = "https://sea-slug-tpije.germanywestcentral.inference.ml.azure.com/score";
+            // Convert image uploaded to a base64 string
+            string base64String = ImageHelper.ConvertImageToBase64(image);
 
+            // Get the api endpoint from appsettings.json
+            string apiEndpoint = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("Secrets")["AzureEndpoint"];
+
+            // Send API Post request containing the image base64 string 
             var content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(image), System.Text.Encoding.UTF8, "application/json");
-
             HttpResponseMessage response = await httpClient.PostAsync(apiEndpoint, content);
 
             // Check the response status
@@ -31,33 +38,37 @@ namespace SeaSlugAPI.Services
             {
                 // Read and deserialize the response content
                 string responseBody = await response.Content.ReadAsStringAsync();
-                AzurePredictionResponse responseObject = Newtonsoft.Json.JsonConvert.DeserializeObject<AzurePredictionResponse>(responseBody);
+                AzureSinglePredictResponse? responseObject = Newtonsoft.Json.JsonConvert.DeserializeObject<AzureSinglePredictResponse>(responseBody);
+
+                if (responseObject == null)
+                {
+                    return new BaseResponse() { Message = "Could not determine sea slug species" };
+                }
 
                 SeaSlugDictionary dictionary = new SeaSlugDictionary();
+                List<SlugProbability> probabilities = new List<SlugProbability>();
 
-                List<Probabilities> probabilities = new List<Probabilities>();
-
-                foreach (PredictionProbabilities probability in responseObject.ParsedData)
+                foreach (PredictionProbability probability in responseObject.ParsedData)
                 {
-                    if(dictionary.Data.TryGetValue(probability.Label, out var slugName))
+                    if (dictionary.Data.TryGetValue(probability.Label, out var slugName))
                     {
-                        probabilities.Add(new Probabilities() { Label = slugName, Probability = (int)Math.Round(probability.Probability * 100) });
+                        probabilities.Add(new SlugProbability() { LabelNr= probability.Label, Label = slugName, Probability = (int)Math.Round(probability.Probability * 100) });
                     }
                 }
 
                 if (probabilities.Count > 0)
                 {
-                    return new PredictionResponse(responseObject.Message, probabilities);
+                    return new SinglePredictionResponse() { Message = responseObject.Message, Probabilities = probabilities };
                 }
                 else
                 {
-                    return new PredictionResponse(responseObject.Message);
+                    return new BaseResponse() { Message = "Could not determine sea slug species" };
                 }
             }
             else
             {
                 string errorResponse = await response.Content.ReadAsStringAsync();
-                return new PredictionResponse(errorResponse);
+                return new BaseResponse() { Message = errorResponse };
             }
         }
     }

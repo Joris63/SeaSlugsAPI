@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using SeaSlugAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,14 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowCredentials();
     });
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.ValueCountLimit = int.MaxValue;
+    options.MultipartBodyLengthLimit = long.MaxValue;
+    options.MemoryBufferThreshold = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
 });
 
 builder.Services.AddScoped<IAzureService, AzureService>();
@@ -35,6 +44,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseRouting();
 
