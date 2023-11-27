@@ -56,11 +56,35 @@ namespace SeaSlugAPI.Controllers
         }
 
         [HttpPost]
-
         [Route("validate")]
-        public async Task<IActionResult> ValidatePrediction([FromForm] validatePredictionRequest model)
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ValidatePrediction([FromForm] ValidatePredictionRequest model)
         {
-            return Ok("Nothing happened");
+            if (!ImageHelper.isValidImageFile(model.Image))
+            {
+                return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
+            }
+
+            try
+            {
+                BaseResponse response = await _azureService.UploadBlob(model);
+
+                if(response.Success)
+                {
+                    return Ok(response.Message);
+                }
+                else
+                {
+                    return BadRequest(response.Message);
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }
