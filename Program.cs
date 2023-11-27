@@ -1,10 +1,15 @@
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore;
+using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 
 configuration.AddJsonFile("appsettings.json").AddEnvironmentVariables();
+
+// Add services to the container.
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(configuration.GetSection("Secrets")["DBConnectionString"]));
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -41,6 +46,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
 app.UseHttpsRedirection();

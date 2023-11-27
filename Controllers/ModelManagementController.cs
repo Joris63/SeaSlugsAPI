@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
+using SeaSlugAPI.Services;
 
 namespace SeaSlugAPI.Controllers
 {
@@ -7,6 +9,13 @@ namespace SeaSlugAPI.Controllers
     [ApiController]
     public class ModelManagementController : ControllerBase
     {
+        private readonly ISeaSlugService _seaSlugService;
+
+        public ModelManagementController(ISeaSlugService seaSlugService)
+        {
+            _seaSlugService = seaSlugService;
+        }
+
         [HttpGet]
         [Route("training-status")]
         public async Task<IActionResult> GetTrainingStatus()
@@ -16,16 +25,50 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPost]
         [Route("add-label")]
-        public async Task<IActionResult> AddLabel([FromBody] AddLabelRequest model)
+        public async Task<IActionResult> AddLabel([FromBody] AddSeaSlugRequest model)
         {
-            return Ok("Nothing happened");
+            try
+            {
+                BaseResponse response = await _seaSlugService.Add(model);
+
+                if (response.Success)
+                {
+                    return Ok(response.Message);
+                }
+                else
+                {
+                    return BadRequest(response.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, "Internal server error");
+            }
         }
 
         [HttpPost]
         [Route("change-label")]
-        public async Task<IActionResult> ChangeLabelName([FromBody] EditLabelRequest model)
+        public async Task<IActionResult> ChangeLabelName([FromBody] EditSeaSlugRequest model)
         {
-            return Ok("Nothing happened");
+            try
+            {
+                BaseResponse response = await _seaSlugService.Edit(model);
+
+                if (response.Success)
+                {
+                    return Ok(response.Message);
+                }
+                else
+                {
+                    return BadRequest(response.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

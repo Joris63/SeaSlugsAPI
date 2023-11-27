@@ -1,4 +1,6 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure;
+using Azure.Storage.Blobs;
+using Microsoft.AspNetCore.Mvc;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
 
