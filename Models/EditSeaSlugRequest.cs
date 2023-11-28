@@ -2,7 +2,8 @@
 {
     public class EditSeaSlugRequest
     {
-        public int Label { get; set; }
-        public string NewName { get; set;}
+        public Guid Id { get; set; }
+        public int Label { get; set; } = -1;
+        public string Name { get; set;} = string.Empty;
     }
 }

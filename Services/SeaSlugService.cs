@@ -7,8 +7,8 @@ namespace SeaSlugAPI.Services
 {
     public interface ISeaSlugService
     {
-        Task<BaseResponse> Add(AddSeaSlugRequest model);
-        Task<BaseResponse> Edit(EditSeaSlugRequest model);
+        Task<SeaSlugResponse> Add(AddSeaSlugRequest model);
+        Task<SeaSlugResponse> Edit(EditSeaSlugRequest model);
     }
 
     public class SeaSlugService : ISeaSlugService
@@ -22,11 +22,11 @@ namespace SeaSlugAPI.Services
             _azureService = azureService;
         }
 
-        public async Task<BaseResponse> Add(AddSeaSlugRequest model)
+        public async Task<SeaSlugResponse> Add(AddSeaSlugRequest model)
         {
             if (await LabelExists(model.Label))
             {
-                return new BaseResponse() { Message = "Label already exists." };
+                return new SeaSlugResponse() { Message = "Label already exists." };
             }
 
             try
@@ -34,35 +34,50 @@ namespace SeaSlugAPI.Services
                 SeaSlug newSlug = new SeaSlug() { Id = Guid.NewGuid(), Label = model.Label, Name = model.Name };
 
                 await _context.SeaSlugs.AddAsync(newSlug);
-                await _context.SaveChangesAsync();
 
-                return new AddSeaSlugResponse() { Success = true, Message = "Sea Slug species added.", Label = newSlug.Label, Name = newSlug.Name };
+                BlobStorageResponse containerCreateResponse = await _azureService.CreateContainer(newSlug.Id.ToString());
+
+                if (containerCreateResponse.Success)
+                {
+                    await _context.SaveChangesAsync();
+                }
+
+                return new SeaSlugResponse() { Success = true, Message = "Sea Slug species added.", SeaSlug = DTOConverter.SeaSlugToDTO(newSlug) };
             }
             catch (Exception ex)
             {
-                return new BaseResponse() { Message = ex.Message };
+                return new SeaSlugResponse() { Message = ex.Message };
             }
         }
 
-        public async Task<BaseResponse> Edit(EditSeaSlugRequest model)
+        public async Task<SeaSlugResponse> Edit(EditSeaSlugRequest model)
         {
             try
             {
-                SeaSlug? retrievedSlug = await _context.SeaSlugs.FirstOrDefaultAsync(x => x.Id.Equals(model.Label));
+                SeaSlug? retrievedSlug = await _context.SeaSlugs.FirstOrDefaultAsync(x => x.Id.Equals(model.Id));
 
                 if (retrievedSlug == null)
                 {
-                    return new BaseResponse() { Message = "No sea slug found." };
+                    return new SeaSlugResponse() { Message = "No sea slug found." };
                 }
 
-                retrievedSlug.Name = model.NewName;
+                if(model.Label != -1)
+                {
+                    retrievedSlug.Label = model.Label;
+                }
+
+                if (model.Name != string.Empty)
+                {
+                    retrievedSlug.Name = model.Name;
+                }
+
                 await _context.SaveChangesAsync();
 
-                return new EditSeaSlugResponse() { Success = true, Message = "Sea slug name updated.", Label = retrievedSlug.Label, Name = retrievedSlug.Name };
+                return new SeaSlugResponse() { Success = true, Message = "Sea slug name updated.", SeaSlug = DTOConverter.SeaSlugToDTO(retrievedSlug) };
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                return new BaseResponse() { Message = ex.Message };
+                return new SeaSlugResponse() { Message = ex.Message };
             }
         }
 

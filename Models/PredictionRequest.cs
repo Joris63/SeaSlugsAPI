@@ -1,6 +1,6 @@
 namespace SeaSlugAPI.Models
 {
-    public class SinglePredictionRequest
+    public class PredictionRequest
     {
         public IFormFile Image { get; set; }
     }

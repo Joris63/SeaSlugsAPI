@@ -1,5 +1,6 @@
 ﻿using Azure;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Mvc;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
@@ -8,8 +9,9 @@ namespace SeaSlugAPI.Services
 {
     public interface IAzureService
     {
-        Task<BaseResponse> GetPrediction(IFormFile image);
-        Task<BaseResponse> UploadBlob(ValidatePredictionRequest request);
+        Task<PredictionResponse> GetPrediction(IFormFile image);
+        Task<BlobStorageResponse> CreateContainer(string containerName);
+        Task<BlobStorageResponse> UploadBlob(ValidatePredictionRequest request);
     }
 
     public class AzureService : IAzureService
@@ -25,7 +27,7 @@ namespace SeaSlugAPI.Services
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authorizationKey}");
         }
 
-        public async Task<BaseResponse> GetPrediction(IFormFile image)
+        public async Task<PredictionResponse> GetPrediction(IFormFile image)
         {
             // Convert image uploaded to a base64 string
             string base64String = ImageHelper.ConvertImageToBase64(image);
@@ -46,7 +48,7 @@ namespace SeaSlugAPI.Services
 
                 if (responseObject == null)
                 {
-                    return new BaseResponse() { Message = "Could not determine sea slug species" };
+                    return new PredictionResponse() { Message = "Could not determine sea slug species" };
                 }
 
                 SeaSlugDictionary dictionary = new SeaSlugDictionary();
@@ -56,27 +58,27 @@ namespace SeaSlugAPI.Services
                 {
                     if (dictionary.Data.TryGetValue(probability.Label, out var slugName))
                     {
-                        probabilities.Add(new SlugProbability() { LabelNr = probability.Label, Label = slugName, Probability = (int)Math.Round(probability.Probability * 100) });
+                        probabilities.Add(new SlugProbability() { Label = probability.Label, Name = slugName, Probability = (int)Math.Round(probability.Probability * 100) });
                     }
                 }
 
                 if (probabilities.Count > 0)
                 {
-                    return new SinglePredictionResponse() { Success = true, Message = responseObject.Message, Probabilities = probabilities };
+                    return new PredictionResponse() { Success = true, Message = responseObject.Message, Probabilities = probabilities };
                 }
                 else
                 {
-                    return new BaseResponse() { Message = "Could not determine sea slug species" };
+                    return new PredictionResponse() { Message = "Could not determine sea slug species" };
                 }
             }
             else
             {
                 string errorResponse = await response.Content.ReadAsStringAsync();
-                return new BaseResponse() { Message = errorResponse };
+                return new PredictionResponse() { Message = errorResponse };
             }
         }
 
-        public async Task<BaseResponse> CreateContainer(string containerName)
+        public async Task<BlobStorageResponse> CreateContainer(string containerName)
         {
             // Get the api endpoint from appsettings.json
             string blobStorageConnectionString = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("Secrets")["BlobStorage"];
@@ -89,18 +91,18 @@ namespace SeaSlugAPI.Services
                 if (!await blobContainerClient.ExistsAsync())
                 {
                     await blobContainerClient.CreateAsync();
-                    return new BaseResponse() { Success = true, Message = "New container created." };
+                    return new BlobStorageResponse() { Success = true, Message = "New container created." };
                 }
 
-                return new BaseResponse() { Message = "Container already exists." };
+                return new BlobStorageResponse() { Message = "Container already exists." };
             }
             catch (Exception ex)
             {
-                return new BaseResponse() { Message = ex.Message };
+                return new BlobStorageResponse() { Message = ex.Message };
             }
         }
 
-        public async Task<BaseResponse> UploadBlob(ValidatePredictionRequest request)
+        public async Task<BlobStorageResponse> UploadBlob(ValidatePredictionRequest request)
         {
             // Get the api endpoint from appsettings.json
             string blobStorageConnectionString = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("Secrets")["BlobStorage"];
@@ -108,7 +110,7 @@ namespace SeaSlugAPI.Services
             try
             {
                 var blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
-                var blobContainerClient = blobServiceClient.GetBlobContainerClient(request.Label);
+                var blobContainerClient = blobServiceClient.GetBlobContainerClient(request.Id.ToString());
 
                 // Query existing blobs to determine the next available integer label
                 int nextLabel = await GetNextLabel(blobContainerClient);
@@ -123,11 +125,11 @@ namespace SeaSlugAPI.Services
                     await blobClient.UploadAsync(stream, true);
                 }
 
-                return new BaseResponse() { Success = true, Message = $"Image uploaded successfully!" };
+                return new BlobStorageResponse() { Success = true, Message = $"Image uploaded successfully!" };
             }
             catch (Exception ex)
             {
-                return new BaseResponse() { Message = ex.Message };
+                return new BlobStorageResponse() { Message = ex.Message };
             }
         }
 

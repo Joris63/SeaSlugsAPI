@@ -25,11 +25,14 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPost]
         [Route("add-label")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AddLabel([FromBody] AddSeaSlugRequest model)
         {
             try
             {
-                BaseResponse response = await _seaSlugService.Add(model);
+                SeaSlugResponse response = await _seaSlugService.Add(model);
 
                 if (response.Success)
                 {
@@ -49,11 +52,14 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPost]
         [Route("change-label")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ChangeLabelName([FromBody] EditSeaSlugRequest model)
         {
             try
             {
-                BaseResponse response = await _seaSlugService.Edit(model);
+                SeaSlugResponse response = await _seaSlugService.Edit(model);
 
                 if (response.Success)
                 {

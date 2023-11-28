@@ -18,10 +18,10 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPost]
         [Route("single")]
-        [ProducesResponseType(typeof(SinglePredictionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PredictionResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> PredictSingle([FromForm] SinglePredictionRequest model)
+        public async Task<IActionResult> PredictSingle([FromForm] PredictionRequest model)
         {
             if (!ImageHelper.isValidImageFile(model.Image))
             {
@@ -30,11 +30,11 @@ namespace SeaSlugAPI.Controllers
 
             try
             {
-                BaseResponse response = await _azureService.GetPrediction(model.Image);
+                PredictionResponse response = await _azureService.GetPrediction(model.Image);
 
-                if (response is SinglePredictionResponse predictionResponse)
+                if (response.Success)
                 {
-                    return Ok(predictionResponse);
+                    return Ok(response);
                 }
                 else
                 {
@@ -69,7 +69,7 @@ namespace SeaSlugAPI.Controllers
 
             try
             {
-                BaseResponse response = await _azureService.UploadBlob(model);
+                BlobStorageResponse response = await _azureService.UploadBlob(model);
 
                 if(response.Success)
                 {

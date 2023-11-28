@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using SeaSlugAPI.Helpers;
+using SeaSlugAPI;
 using SeaSlugAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +32,7 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 builder.Services.AddScoped<IAzureService, AzureService>();
+builder.Services.AddScoped<ISeaSlugService, SeaSlugService>();
 
 builder.Services.AddControllers();
 
@@ -51,7 +52,7 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    //db.Database.Migrate();
 }
 
 app.UseHttpsRedirection();

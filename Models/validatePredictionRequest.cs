@@ -2,7 +2,7 @@ namespace SeaSlugAPI.Models
 {
     public class ValidatePredictionRequest
     {
-        public string Label { get; set; }
+        public Guid Id { get; set; }
         public IFormFile Image { get; set; }
     }
 }
