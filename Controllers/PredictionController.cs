@@ -5,86 +5,28 @@ using SeaSlugAPI.Services;
 
 namespace SeaSlugAPI.Controllers
 {
-    [Route("api/prediction")]
+    [Route("api/predictions")]
     [ApiController]
     public class PredictionController : ControllerBase
     {
-        private readonly IAzureService _azureService;
-
-        public PredictionController(IAzureService azureService)
-        {
-            _azureService = azureService;
-        }
-
         [HttpPost]
-        [Route("single")]
-        [ProducesResponseType(typeof(PredictionResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> PredictSingle([FromForm] PredictionRequest model)
+        public async Task<IActionResult> Predict([FromForm] PredictionRequest model)
         {
-            if (!ImageHelper.isValidImageFile(model.Image))
-            {
-                return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
-            }
-
-            try
-            {
-                PredictionResponse response = await _azureService.GetPrediction(model.Image);
-
-                if (response.Success)
-                {
-                    return Ok(response);
-                }
-                else
-                {
-                    return BadRequest(response.Message);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                return StatusCode(500, "Internal server error");
-            }
+            return Ok();
         }
 
         [HttpPost]
         [Route("batch")]
         public async Task<IActionResult> PredictBatch([FromForm] BatchPredictionRequest model)
         {
-            return Ok("Nothing happened");
+            return Ok();
         }
 
         [HttpPost]
         [Route("validate")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ValidatePrediction([FromForm] ValidatePredictionRequest model)
         {
-            if (!ImageHelper.isValidImageFile(model.Image))
-            {
-                return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
-            }
-
-            try
-            {
-                BlobStorageResponse response = await _azureService.UploadBlob(model);
-
-                if(response.Success)
-                {
-                    return Ok(response.Message);
-                }
-                else
-                {
-                    return BadRequest(response.Message);
-                }
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine(ex);
-                return StatusCode(500, "Internal server error");
-            }
+            return Ok();
         }
     }
 }

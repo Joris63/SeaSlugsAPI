@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using SeaSlugAPI;
+using SeaSlugAPI.Context;
 using SeaSlugAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);

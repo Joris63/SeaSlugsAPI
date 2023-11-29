@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SeaSlugAPI.Entities;
 
-namespace SeaSlugAPI
+namespace SeaSlugAPI.Context
 {
     public class AppDbContext : DbContext
     {
