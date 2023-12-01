@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using SeaSlugAPI.Context;
-using SeaSlugAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
@@ -31,8 +30,7 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
 
-builder.Services.AddScoped<IAzureService, AzureService>();
-builder.Services.AddScoped<ISeaSlugService, SeaSlugService>();
+builder.Services.AddSingleton<IConfiguration>(configuration);
 
 builder.Services.AddControllers();
 

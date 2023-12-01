@@ -10,6 +10,7 @@ namespace SeaSlugAPI.Services
     {
         Task<SeaSlugDTO> Add(AddSeaSlugRequest model);
         Task<SeaSlugDTO> Get(Guid id);
+        Task<SeaSlugDTO> Get(int label);
         Task<List<SeaSlugDTO>> GetAll();
         Task<SeaSlugDTO> Rename(RenameSeaSlugRequest model);
         Task<List<SeaSlugDTO>> ReorderLabels(ReorderSeaSlugsRequest model);
@@ -23,6 +24,10 @@ namespace SeaSlugAPI.Services
         }
 
         public async Task<SeaSlugDTO> Get(Guid id)
+        {
+            return new SeaSlugDTO();
+        }
+        public async Task<SeaSlugDTO> Get(int label)
         {
             return new SeaSlugDTO();
         }
