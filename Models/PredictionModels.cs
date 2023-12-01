@@ -27,5 +27,16 @@
         public List<SlugProbability> Probabilities { get; set; } = new List<SlugProbability>();
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
+
+        public PredictionResults(string message)
+        {
+            Message = message;
+        }
+        public PredictionResults(string message, List<SlugProbability> probabilities)
+        {
+            Probabilities = probabilities;
+            Success = true;
+            Message = message;
+        }
     }
 }

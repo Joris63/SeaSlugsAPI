@@ -34,9 +34,9 @@ namespace SeaSlugAPI.Services
             // Get the realtime endpoint of the deployed model from secrets
             string endpoint = _configuration["ModelRTEndpoint"] ?? string.Empty;
 
-            if(endpoint == string.Empty)
+            if (endpoint == string.Empty)
             {
-                return new PredictionResults() { Message = "Could not get a prediction." };
+                return new PredictionResults("Could not get a prediction");
             }
 
             try
@@ -53,27 +53,38 @@ namespace SeaSlugAPI.Services
                     RealtimeEndpointResponse? response = JsonConvert.DeserializeObject<RealtimeEndpointResponse>(responseBody) ?? null;
 
                     // Check the response content
-                    if(response == null)
+                    if (response == null)
                     {
-                        return new PredictionResults() { Message = "Could not get a prediction" };
+                        return new PredictionResults("Could not get a prediction");
                     }
 
+                    // Create an empty list of probabilities which we will then fill with the results gotten from the AI
                     List<SlugProbability> probabilities = new List<SlugProbability>();
-
                     foreach (ModelPredictionProbability probability in response.ParsedData)
                     {
-                        SeaSlugDTO slug = _seaSlugService.Get(probability.Label);
+                        // Retrieve the label with the label received from the prediction results
+                        SeaSlugDTO slug = await _seaSlugService.Get(probability.Label);
 
-
+                        // Check value and add the slug probability
+                        if (slug != null)
+                        {
+                            int percentage = (int)Math.Round(probability.Probability * 100);
+                            probabilities.Add(new SlugProbability() { Id = slug.Id, Name = slug.Name, Probability = percentage });
+                        }
                     }
+
+                    return new PredictionResults("Identified sea slug successfully.", probabilities);
+                }
+                else
+                {
+                    return new PredictionResults("Could not get a prediction");
                 }
             }
             catch (Exception ex)
             {
-
+                Console.Write(ex.Message);
+                return new PredictionResults("Could not get a prediction");
             }
-
-            return new PredictionResults();
         }
 
         public async Task<List<PredictionResults>> PredictBatch(BatchPredictionRequest model)
