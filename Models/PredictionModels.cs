@@ -19,7 +19,7 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int Probability { get; set; } = 0;
+        public decimal Probability { get; set; } = 0;
     }
 
     public class PredictionResults

@@ -75,7 +75,7 @@ namespace SeaSlugAPI.Controllers
                     }
                     else
                     {
-                        return NotFound();
+                        return NotFound(results.Message);
                     }
                 }
                 else
@@ -119,7 +119,7 @@ namespace SeaSlugAPI.Controllers
                     }
                     else
                     {
-                        return NotFound();
+                        return NotFound(results.Message);
                     }
                 }
                 else
@@ -153,7 +153,7 @@ namespace SeaSlugAPI.Controllers
                     }
                     else
                     {
-                        return NotFound();
+                        return NotFound(results.Message);
                     }
                 }
                 else
@@ -168,7 +168,7 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPatch]
         [Route("rename")]
         public async Task<IActionResult> Rename([FromBody] RenameSeaSlugRequest model)
         {
@@ -202,7 +202,7 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPut]
         [Route("reorder")]
         public async Task<IActionResult> ReorderLabels([FromBody] ReorderSeaSlugsRequest model)
         {
@@ -215,7 +215,7 @@ namespace SeaSlugAPI.Controllers
                 if (results.Success)
                 {
                     // Check Data
-                    if (results.Data.Count > 0)
+                    if (results.Data?.Count > 0)
                     {
                         return Ok(results.Data);
                     }

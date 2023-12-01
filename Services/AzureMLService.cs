@@ -2,6 +2,7 @@
 using SeaSlugAPI.Entities.DTOs;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
+using System.Net;
 using System.Text;
 
 namespace SeaSlugAPI.Services
@@ -31,19 +32,31 @@ namespace SeaSlugAPI.Services
         {
             // Convert the image provided to a base64 string
             string base64String = ImageHelper.ConvertImageToBase64(model.Image);
-            // Get the realtime endpoint of the deployed model from secrets
+            // Get the realtime endpoint and key of the deployed model from secrets
             string endpoint = _configuration["ModelRTEndpoint"] ?? string.Empty;
+            string endpointKey = _configuration["ModelRTEndpointKey"] ?? string.Empty;
 
-            if (endpoint == string.Empty)
+            if (endpoint == string.Empty || endpointKey == string.Empty)
             {
-                return new PredictionResults("Could not get a prediction");
+                return new PredictionResults("Could not get a prediction.");
             }
 
             try
             {
                 // Serialize base64String and request prediction from the realtime endpoint
-                var content = new StringContent(JsonConvert.SerializeObject(base64String), Encoding.UTF8, "application/json");
-                HttpResponseMessage httpResponse = await _httpClient.PostAsync(endpoint, content);
+                StringContent content = new StringContent(JsonConvert.SerializeObject(base64String), Encoding.UTF8, "application/json");
+                HttpRequestMessage httpRequestMessage = new HttpRequestMessage()
+                {
+                    Method = HttpMethod.Post,
+                    RequestUri = new Uri(endpoint),
+                    Headers =
+                    {
+                        {HttpRequestHeader.Authorization.ToString(), $"Bearer {endpointKey}" }
+                    },
+                    Content = content
+                };
+
+                HttpResponseMessage httpResponse = await _httpClient.SendAsync(httpRequestMessage);
 
                 // Check the response status
                 if (httpResponse.IsSuccessStatusCode)
@@ -55,7 +68,7 @@ namespace SeaSlugAPI.Services
                     // Check the response content
                     if (response == null)
                     {
-                        return new PredictionResults("Could not get a prediction");
+                        return new PredictionResults("Could not get a prediction.");
                     }
 
                     // Create an empty list of probabilities which we will then fill with the results gotten from the AI
@@ -63,27 +76,37 @@ namespace SeaSlugAPI.Services
                     foreach (ModelPredictionProbability probability in response.ParsedData)
                     {
                         // Retrieve the label with the label received from the prediction results
-                        SeaSlugDTO slug = await _seaSlugService.Get(probability.Label);
+                        SeaSlugServiceResults<SeaSlugDTO> slugResponse = await _seaSlugService.GetByLabel(probability.Label);
+
+                        if(!slugResponse.Success)
+                        {
+                            return new PredictionResults("Could not get a prediction.");
+                        }
 
                         // Check value and add the slug probability
-                        if (slug != null)
+                        if (slugResponse.Data != null)
                         {
-                            int percentage = (int)Math.Round(probability.Probability * 100);
-                            probabilities.Add(new SlugProbability() { Id = slug.Id, Name = slug.Name, Probability = percentage });
+                            decimal percentage = (decimal)Math.Round(probability.Probability * 100, 2);
+                            probabilities.Add(new SlugProbability() { Id = slugResponse.Data.Id, Name = slugResponse.Data.Name, Probability = percentage });
                         }
                     }
 
-                    return new PredictionResults("Identified sea slug successfully.", probabilities);
+                    if(probabilities.Count > 0)
+                    {
+                        return new PredictionResults("Identified sea slug successfully.", probabilities);
+                    }
+
+                    return new PredictionResults("Could not get a prediction.", probabilities);
                 }
                 else
                 {
-                    return new PredictionResults("Could not get a prediction");
+                    return new PredictionResults("Could not get a prediction.");
                 }
             }
             catch (Exception ex)
             {
                 Console.Write(ex.Message);
-                return new PredictionResults("Could not get a prediction");
+                return new PredictionResults("Could not get a prediction.");
             }
         }
 

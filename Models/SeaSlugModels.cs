@@ -11,15 +11,9 @@
         public string NewName { get; set; } = string.Empty;
     }
 
-    public class ReorderedSeaSlug
-    {
-        public Guid Id { get; set; }
-        public int Label { get; set; }
-    }
-
     public class ReorderSeaSlugsRequest
     {
-        public List<ReorderedSeaSlug> SeaSlugs = new List<ReorderedSeaSlug>();
+        public List<Guid> OrderedSeaSlugIds { get; set; } = new List<Guid>();
     }
 
     public class SeaSlugServiceResults<T>

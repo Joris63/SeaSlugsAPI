@@ -12,5 +12,11 @@ namespace SeaSlugAPI.Controllers
         {
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> StartTraining()
+        {
+            return Ok();
+        }
     }
 }

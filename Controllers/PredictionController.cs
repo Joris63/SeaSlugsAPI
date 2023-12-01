@@ -10,9 +10,9 @@ namespace SeaSlugAPI.Controllers
     [ApiController]
     public class PredictionController : ControllerBase
     {
-        private readonly AzureMLService _azureMLService;
+        private readonly IAzureMLService _azureMLService;
 
-        public PredictionController(AzureMLService azureMLService)
+        public PredictionController(IAzureMLService azureMLService)
         {
             _azureMLService = azureMLService;
         }
@@ -41,7 +41,7 @@ namespace SeaSlugAPI.Controllers
                     }
                     else
                     {
-                        return NotFound();
+                        return NotFound(results.Message);
                     }
                 }
                 else

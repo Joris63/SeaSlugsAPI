@@ -46,26 +46,6 @@ namespace SeaSlugAPI.Services
 
                 // Add to DB and save changes
                 await _dbContext.SeaSlugs.AddAsync(newSlug);
-
-                // Create a new container inside the Azure Blob Storage
-                BlobStorageResponse containerCreateResponse = await _blobStorageService.CreateContainer(newSlug.Id.ToString());
-
-                // Check the response status
-                if (!containerCreateResponse.Success)
-                {
-                    // If it experienced an internal error also throw one here
-                    if (containerCreateResponse.Error != string.Empty)
-                    {
-                        throw new Exception(containerCreateResponse.Error);
-                    }
-                    
-                    // For when the container already exists
-                    if(containerCreateResponse.Message != string.Empty)
-                    {
-                        return new SeaSlugServiceResults<SeaSlugDTO>("Could not add sea slug.");
-                    }
-                }
-
                 await _dbContext.SaveChangesAsync();
 
                 return new SeaSlugServiceResults<SeaSlugDTO>(DTOConverter.SeaSlugToDTO(newSlug), true, "Successfully added sea slug.");
@@ -188,13 +168,13 @@ namespace SeaSlugAPI.Services
                 // Go through each sea slug found and change the label of it
                 foreach (SeaSlug seaSlug in seaSlugs)
                 {
-                    ReorderedSeaSlug? reorderedSlug = model.SeaSlugs.Find(x => x.Id == seaSlug.Id);
+                    int newLabel = model.OrderedSeaSlugIds.FindIndex(x => x == seaSlug.Id);
 
-                    // Check if the sea slug can get a new label,
+                    // Check if the id was found in the list
                     // if not cancel the process
-                    if (reorderedSlug != null)
+                    if (newLabel != -1)
                     {
-                        seaSlug.Label = reorderedSlug.Label;
+                        seaSlug.Label = newLabel;
                     }
                     else
                     {
