@@ -11,13 +11,18 @@ namespace SeaSlugAPI.Controllers
     public class PredictionController : ControllerBase
     {
         private readonly IAzureMLService _azureMLService;
+        private readonly IBlobStorageService _blobStorageService;
 
-        public PredictionController(IAzureMLService azureMLService)
+        public PredictionController(IAzureMLService azureMLService, IBlobStorageService blobStorageService)
         {
             _azureMLService = azureMLService;
+            _blobStorageService = blobStorageService;
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(List<SlugProbability>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Predict([FromForm] PredictionRequest model)
         {
             try
@@ -32,10 +37,10 @@ namespace SeaSlugAPI.Controllers
                 PredictionResults results = await _azureMLService.Predict(model);
 
                 // Check if it succeeded
-                if(results.Success)
+                if (results.Success)
                 {
                     // Check for the probabilities count
-                    if(results.Probabilities.Count > 0)
+                    if (results.Probabilities.Count > 0)
                     {
                         return Ok(results.Probabilities);
                     }
@@ -65,9 +70,45 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPost]
         [Route("validate")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ValidatePrediction([FromForm] ValidatePredictionRequest model)
         {
-            return Ok();
+            try
+            {
+                // Check if the image is of type png or jpeg
+                if (!ImageHelper.isValidImageFile(model.Image))
+                {
+                    return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
+                }
+
+                // Request prediction from the model in Azure ML Studio
+                BlobStorageResponse results = await _blobStorageService.UploadBlob(model);
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    return Ok(results.Message);
+                }
+                else
+                {
+                    // Check if something went wrong internally
+                    if (results.Error != string.Empty)
+                    {
+                        return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                    }
+                    else
+                    {
+                        return BadRequest(results.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
     }
 }

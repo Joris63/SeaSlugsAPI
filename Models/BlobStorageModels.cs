@@ -17,5 +17,24 @@
             Message = message;
         }
     }
+
+    public class BlobStorageResponse<T>
+    {
+        public T? Data { get; set; }
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+
+        public BlobStorageResponse(string message)
+        {
+            Message = message;
+        }
+
+        public BlobStorageResponse(T data, string message)
+        {
+            Data = data;
+            Success = true;
+            Message = message;
+        }
+    }
 }
 

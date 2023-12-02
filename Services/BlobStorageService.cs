@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Azure.Storage.Blobs;
 using SeaSlugAPI.Models;
+using System.IO.Compression;
 
 namespace SeaSlugAPI.Services
 {
@@ -8,6 +9,7 @@ namespace SeaSlugAPI.Services
     {
         Task<BlobStorageResponse> CreateContainer(string name);
         Task<BlobStorageResponse> UploadBlob(ValidatePredictionRequest model);
+        Task<BlobStorageResponse<Stream>> RetrieveTrainingData();
     }
 
     public class BlobStorageService : IBlobStorageService
@@ -24,7 +26,7 @@ namespace SeaSlugAPI.Services
             // Get the blob storage endpoint
             string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
 
-            if(blobStorageConnectionString == string.Empty)
+            if (blobStorageConnectionString == string.Empty)
             {
                 return new BlobStorageResponse("Could not create container.");
             }
@@ -59,20 +61,27 @@ namespace SeaSlugAPI.Services
 
             if (blobStorageConnectionString == string.Empty)
             {
-                return new BlobStorageResponse("Could not create container.");
+                return new BlobStorageResponse("Unable to upload image.");
             }
 
             try
             {
                 // Get the blob service client
                 var blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
-                var blobContainerClient = blobServiceClient.GetBlobContainerClient(model.Id.ToString());
+                var blobContainerClient = blobServiceClient.GetBlobContainerClient("validated-images");
+
+                // Check if the container exists
+                if (!await blobContainerClient.ExistsAsync())
+                {
+                    Console.Write("Container does not exist.");
+                    return new BlobStorageResponse("Unable to upload image.");
+                }
 
                 // Query existing blobs to determine the next available integer label
-                int nextLabel = await GetNextLabel(blobContainerClient);
+                int nextLabel = await GetNextLabel(blobContainerClient, model.Id.ToString());
 
-                // Use the next available integer as the label for the file name
-                string fileName = $"{nextLabel}{Path.GetExtension(model.Image.FileName)}";
+                // Use the next available integer as the label for the file name with its slug id as folder path
+                string fileName = $"{model.Id}/{nextLabel}{Path.GetExtension(model.Image.FileName)}";
 
                 var blobClient = blobContainerClient.GetBlobClient(fileName);
 
@@ -89,9 +98,62 @@ namespace SeaSlugAPI.Services
                 return new BlobStorageResponse("Unable to upload image.");
             }
         }
-        private async Task<int> GetNextLabel(BlobContainerClient containerClient)
+
+        public async Task<BlobStorageResponse<Stream>> RetrieveTrainingData()
         {
-            var blobItems = containerClient.GetBlobsByHierarchy(delimiter: string.Empty);
+            // Get the blob storage endpoint
+            string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
+
+            if (blobStorageConnectionString == string.Empty)
+            {
+                return new BlobStorageResponse<Stream>("Unable to upload image.");
+            }
+
+            try
+            {
+                // Get the blob service client
+                var blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
+                var blobContainerClient = blobServiceClient.GetBlobContainerClient("validated-images");
+
+                // Get all the blob items
+                var blobItems = blobContainerClient.GetBlobsByHierarchy(delimiter: string.Empty);
+
+                // Create a memory stream to store the compressed data
+                using (var compressedStream = new MemoryStream())
+                {
+                    // Create a GZipStream for compressing data asynchronously
+                    using (var gzipStream = new GZipStream(compressedStream, CompressionLevel.Optimal, true))
+                    {
+                        // Iterate over each blob and append its content to the compressed stream
+                        foreach (var blobItem in blobItems)
+                        {
+                            var blobClient = blobContainerClient.GetBlobClient(blobItem.Blob.Name);
+                            var blobDownloadInfo = await blobClient.DownloadAsync();
+
+                            using (var blobStream = blobDownloadInfo.Value.Content)
+                            {
+                                await blobStream.CopyToAsync(gzipStream);
+                                await gzipStream.FlushAsync();
+                            }
+                        }
+                    }
+
+                    // Rewind the compressed stream to the beginning
+                    compressedStream.Position = 0;
+
+                    return new BlobStorageResponse<Stream>(compressedStream, "Downloaded images successfully.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return new BlobStorageResponse<Stream>("Unable to upload image.");
+            }
+        }
+
+        private async Task<int> GetNextLabel(BlobContainerClient containerClient, string folderPath)
+        {
+            var blobItems = containerClient.GetBlobsByHierarchy(delimiter: "/", prefix: folderPath);
 
             if (blobItems == null || !blobItems.Any())
             {

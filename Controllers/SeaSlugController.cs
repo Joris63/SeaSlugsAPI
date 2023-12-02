@@ -19,6 +19,9 @@ namespace SeaSlugAPI.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Add([FromBody] AddSeaSlugRequest model)
         {
             try
@@ -52,6 +55,10 @@ namespace SeaSlugAPI.Controllers
         }
 
         [HttpGet("byId/{id}")]
+        [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetById(string id)
         {
             // Convert the string id to a Guid
@@ -91,6 +98,10 @@ namespace SeaSlugAPI.Controllers
         }
 
         [HttpGet("byLabel/{label}")]
+        [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetByLabel(string label)
         {
             // Convert the string label to an int
@@ -136,6 +147,10 @@ namespace SeaSlugAPI.Controllers
 
         [HttpGet]
         [Route("all")]
+        [ProducesResponseType(typeof(List<SeaSlugDTO>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -170,6 +185,9 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPatch]
         [Route("rename")]
+        [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Rename([FromBody] RenameSeaSlugRequest model)
         {
             try
@@ -204,6 +222,9 @@ namespace SeaSlugAPI.Controllers
 
         [HttpPut]
         [Route("reorder")]
+        [ProducesResponseType(typeof(List<SeaSlugDTO>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ReorderLabels([FromBody] ReorderSeaSlugsRequest model)
         {
             try
