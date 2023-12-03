@@ -1,5 +1,5 @@
 using SeaSlugAPI.Entities;
-using SeaSlugAPI.Models;
+using SeaSlugAPI.Entities.DTOs;
 
 namespace SeaSlugAPI.Helpers
 {

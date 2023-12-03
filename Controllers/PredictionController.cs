@@ -1,50 +1,63 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualBasic;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
 using SeaSlugAPI.Services;
 
 namespace SeaSlugAPI.Controllers
 {
-    [Route("api/prediction")]
+    [Route("api/predictions")]
     [ApiController]
     public class PredictionController : ControllerBase
     {
-        private readonly IAzureService _azureService;
+        private readonly IAzureMLService _azureMLService;
+        private readonly IBlobStorageService _blobStorageService;
 
-        public PredictionController(IAzureService azureService)
+        public PredictionController(IAzureMLService azureMLService, IBlobStorageService blobStorageService)
         {
-            _azureService = azureService;
+            _azureMLService = azureMLService;
+            _blobStorageService = blobStorageService;
         }
 
         [HttpPost]
-        [Route("single")]
-        [ProducesResponseType(typeof(PredictionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<SlugProbability>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> PredictSingle([FromForm] PredictionRequest model)
+        public async Task<IActionResult> Predict([FromForm] PredictionRequest model)
         {
-            if (!ImageHelper.isValidImageFile(model.Image))
-            {
-                return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
-            }
-
             try
             {
-                PredictionResponse response = await _azureService.GetPrediction(model.Image);
-
-                if (response.Success)
+                // Check if the image is of type png or jpeg
+                if (!ImageHelper.isValidImageFile(model.Image))
                 {
-                    return Ok(response);
+                    return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
+                }
+
+                // Request prediction from the model in Azure ML Studio
+                PredictionResults results = await _azureMLService.Predict(model);
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    // Check for the probabilities count
+                    if (results.Probabilities.Count > 0)
+                    {
+                        return Ok(results.Probabilities);
+                    }
+                    else
+                    {
+                        return NotFound(results.Message);
+                    }
                 }
                 else
                 {
-                    return BadRequest(response.Message);
+                    return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                return StatusCode(500, "Internal server error");
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
             }
         }
 
@@ -52,7 +65,7 @@ namespace SeaSlugAPI.Controllers
         [Route("batch")]
         public async Task<IActionResult> PredictBatch([FromForm] BatchPredictionRequest model)
         {
-            return Ok("Nothing happened");
+            return Ok();
         }
 
         [HttpPost]
@@ -62,28 +75,39 @@ namespace SeaSlugAPI.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ValidatePrediction([FromForm] ValidatePredictionRequest model)
         {
-            if (!ImageHelper.isValidImageFile(model.Image))
-            {
-                return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
-            }
-
             try
             {
-                BlobStorageResponse response = await _azureService.UploadBlob(model);
-
-                if(response.Success)
+                // Check if the image is of type png or jpeg
+                if (!ImageHelper.isValidImageFile(model.Image))
                 {
-                    return Ok(response.Message);
+                    return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
+                }
+
+                // Request prediction from the model in Azure ML Studio
+                BlobStorageResponse results = await _blobStorageService.UploadBlob(model);
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    return Ok(results.Message);
                 }
                 else
                 {
-                    return BadRequest(response.Message);
+                    // Check if something went wrong internally
+                    if (results.Error != string.Empty)
+                    {
+                        return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                    }
+                    else
+                    {
+                        return BadRequest(results.Message);
+                    }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                return StatusCode(500, "Internal server error");
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
             }
         }
     }

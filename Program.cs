@@ -1,15 +1,20 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using SeaSlugAPI;
+using SeaSlugAPI.Context;
 using SeaSlugAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-ConfigurationManager configuration = builder.Configuration;
 
-configuration.AddJsonFile("appsettings.json").AddEnvironmentVariables();
+IConfiguration configuration = new ConfigurationBuilder()
+    .SetBasePath(builder.Environment.ContentRootPath)
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddUserSecrets<Program>()
+    .AddEnvironmentVariables()
+    .Build();
 
 // Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(configuration.GetSection("Secrets")["DBConnectionString"]));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(configuration["DBConnectionString"]));
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -31,8 +36,10 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
 
-builder.Services.AddScoped<IAzureService, AzureService>();
+builder.Services.AddSingleton<IConfiguration>(configuration);
+builder.Services.AddScoped<IAzureMLService, AzureMLService>();
 builder.Services.AddScoped<ISeaSlugService, SeaSlugService>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
 builder.Services.AddControllers();
 

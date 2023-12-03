@@ -13,5 +13,13 @@ namespace SeaSlugAPI.Entities
 
         [Required]
         public string Name { get; set; }
+
+
+        public SeaSlug(string name)
+        {
+            Id = Guid.NewGuid();
+            Name = name;
+            Label = -1;
+        }
     }
 }
