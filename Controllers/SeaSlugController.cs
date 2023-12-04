@@ -18,6 +18,9 @@ namespace SeaSlugAPI.Controllers
             _seaSlugService = seaSlugService;
         }
 
+        /// <summary>
+        /// Adds a new sea slug species to the DB.
+        /// </summary>
         [HttpPost]
         [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -54,6 +57,9 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a sea slug species by their Guid ID.
+        /// </summary>
         [HttpGet("byId/{id}")]
         [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -97,6 +103,9 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a sea slug species by their label number.
+        /// </summary>
         [HttpGet("byLabel/{label}")]
         [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -145,6 +154,9 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all the sea slug species.
+        /// </summary>
         [HttpGet]
         [Route("all")]
         [ProducesResponseType(typeof(List<SeaSlugDTO>), StatusCodes.Status200OK)]
@@ -183,6 +195,9 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Renames a sea slug species.
+        /// </summary>
         [HttpPatch]
         [Route("rename")]
         [ProducesResponseType(typeof(SeaSlugDTO), StatusCodes.Status200OK)]
@@ -220,6 +235,9 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Reorders all the sea slug labels to match that of the AI model.
+        /// </summary>
         [HttpPut]
         [Route("reorder")]
         [ProducesResponseType(typeof(List<SeaSlugDTO>), StatusCodes.Status200OK)]

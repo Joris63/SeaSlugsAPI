@@ -19,6 +19,9 @@ namespace SeaSlugAPI.Controllers
             _blobStorageService = blobStorageService;
         }
 
+        /// <summary>
+        /// Predicts the species of the sea slug image requested.
+        /// </summary>
         [HttpPost]
         [ProducesResponseType(typeof(List<SlugProbability>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -61,6 +64,9 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Predicts the species of all the sea slug images requested.
+        /// </summary>
         [HttpPost]
         [Route("batch")]
         public async Task<IActionResult> PredictBatch([FromForm] BatchPredictionRequest model)
@@ -68,6 +74,9 @@ namespace SeaSlugAPI.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Validates the sea slug prediction and saves the data for future AI training.
+        /// </summary>
         [HttpPost]
         [Route("validate")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]

@@ -21,12 +21,10 @@ namespace SeaSlugAPI.Services
     public class SeaSlugService : ISeaSlugService
     {
         private readonly AppDbContext _dbContext;
-        private readonly IBlobStorageService _blobStorageService;
 
-        public SeaSlugService(AppDbContext context, IBlobStorageService blobStorageService)
+        public SeaSlugService(AppDbContext context)
         {
             _dbContext = context;
-            _blobStorageService = blobStorageService;
         }
 
         public async Task<SeaSlugServiceResults<SeaSlugDTO>> Add(AddSeaSlugRequest model)
