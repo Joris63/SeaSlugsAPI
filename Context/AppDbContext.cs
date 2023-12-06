@@ -11,7 +11,8 @@ namespace SeaSlugAPI.Context
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
+            modelBuilder.Entity<SeaSlug>()
+                .HasAlternateKey(c => c.Label);
         }
 
         public DbSet<SeaSlug> SeaSlugs { get; set; }

@@ -9,6 +9,7 @@ namespace SeaSlugAPI.Entities
         public Guid Id { get; set; }
 
         [Required]
+        
         public int Label { get; set; }
 
         [Required]

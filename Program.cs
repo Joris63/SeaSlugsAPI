@@ -16,7 +16,14 @@ IConfiguration configuration = new ConfigurationBuilder()
     .Build();
 
 // Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(configuration["DBConnectionString"]));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(configuration["DBConnectionString"],
+        sqlServerOptionsAction: sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(60),
+                errorNumbersToAdd: null);
+        }));
 
 // Add services to the container.
 builder.Services.AddCors(options =>
