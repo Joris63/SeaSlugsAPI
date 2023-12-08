@@ -4,7 +4,6 @@ using SeaSlugAPI.Entities;
 using SeaSlugAPI.Entities.DTOs;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
-using System.Collections.Generic;
 
 namespace SeaSlugAPI.Services
 {

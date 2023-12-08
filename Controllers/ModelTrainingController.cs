@@ -42,7 +42,34 @@ namespace SeaSlugAPI.Controllers
         [Route("training-data-count")]
         public async Task<IActionResult> GetTrainingDataCount()
         {
-            return Ok();
+            try
+            {
+                // Get the training data count per sea slug
+                BlobStorageResponse<List<SeaSlugValidatedDataCount>> results = await _blobStorageService.RetrieveTrainingDataCount();
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    // Check Data
+                    if (results.Data?.Count > 0)
+                    {
+                        return Ok(results.Data);
+                    }
+                    else
+                    {
+                        return NotFound(results.Message);
+                    }
+                }
+                else
+                {
+                    return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
 
         /// <summary>

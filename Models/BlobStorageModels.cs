@@ -1,5 +1,13 @@
-﻿namespace SeaSlugAPI.Models
+﻿using SeaSlugAPI.Entities.DTOs;
+
+namespace SeaSlugAPI.Models
 {
+    public class SeaSlugValidatedDataCount
+    {
+        public int ImageCount { get; set; }
+        public SeaSlugDTO SeaSlug { get; set; }
+    }
+
     public class BlobStorageResponse
     {
         public bool Success { get; set; }
