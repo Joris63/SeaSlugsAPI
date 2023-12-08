@@ -2,7 +2,7 @@
 
 namespace SeaSlugAPI.Models
 {
-    public class SeaSlugValidatedDataCount
+    public class ValidatedDataCount
     {
         public int ImageCount { get; set; }
         public SeaSlugDTO SeaSlug { get; set; }

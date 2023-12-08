@@ -28,5 +28,20 @@
 
             return allowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase);
         }
+
+        public static bool isValidImageFileJPEG(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return false;
+            }
+
+            var contentType = file.ContentType;
+
+            // Compare against a whitelist of allowed content types
+            var allowedContentTypes = new[] { "image/jpeg", "image/jpg" };
+
+            return allowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase);
+        }
     }
 }

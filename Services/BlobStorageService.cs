@@ -11,7 +11,7 @@ namespace SeaSlugAPI.Services
     {
         Task<BlobStorageResponse> CreateContainer(string name);
         Task<BlobStorageResponse> UploadBlob(ValidatePredictionRequest model);
-        Task<BlobStorageResponse<List<SeaSlugValidatedDataCount>>> RetrieveTrainingDataCount();
+        Task<BlobStorageResponse<List<ValidatedDataCount>>> RetrieveTrainingDataCount();
         Task<BlobStorageResponse<Stream>> RetrieveTrainingData();
     }
 
@@ -104,14 +104,14 @@ namespace SeaSlugAPI.Services
             }
         }
 
-        public async Task<BlobStorageResponse<List<SeaSlugValidatedDataCount>>> RetrieveTrainingDataCount()
+        public async Task<BlobStorageResponse<List<ValidatedDataCount>>> RetrieveTrainingDataCount()
         {
             // Get the blob storage endpoint
             string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
 
             if (blobStorageConnectionString == string.Empty)
             {
-                return new BlobStorageResponse<List<SeaSlugValidatedDataCount>>("Unable to retrieve training data count.");
+                return new BlobStorageResponse<List<ValidatedDataCount>>("Unable to retrieve training data count.");
             }
 
             try
@@ -126,10 +126,10 @@ namespace SeaSlugAPI.Services
                 // Check response
                 if (!response.Success || response.Data == null)
                 {
-                    return new BlobStorageResponse<List<SeaSlugValidatedDataCount>>("Unable to retrieve training data count.");
+                    return new BlobStorageResponse<List<ValidatedDataCount>>("Unable to retrieve training data count.");
                 }
 
-                List<SeaSlugValidatedDataCount> validatedDataCount = new List<SeaSlugValidatedDataCount>();
+                List<ValidatedDataCount> validatedDataCount = new List<ValidatedDataCount>();
 
                 foreach (SeaSlugDTO seaSlug in response.Data)
                 {
@@ -137,22 +137,22 @@ namespace SeaSlugAPI.Services
                     int imageCount = await GetBlobCount(blobContainerClient, seaSlug.Id.ToString());
                     if(imageCount > 0)
                     {
-                        validatedDataCount.Add(new SeaSlugValidatedDataCount() { ImageCount = imageCount, SeaSlug = seaSlug });
+                        validatedDataCount.Add(new ValidatedDataCount() { ImageCount = imageCount, SeaSlug = seaSlug });
                     }
                 }
 
                 // Check if there were any images
                 if (validatedDataCount.Count < 1)
                 {
-                    return new BlobStorageResponse<List<SeaSlugValidatedDataCount>>(validatedDataCount, "No images found for any of the species.");
+                    return new BlobStorageResponse<List<ValidatedDataCount>>(validatedDataCount, "No images found for any of the species.");
                 }
 
-                return new BlobStorageResponse<List<SeaSlugValidatedDataCount>>(validatedDataCount, "Successfully retrieved data count.");
+                return new BlobStorageResponse<List<ValidatedDataCount>>(validatedDataCount, "Successfully retrieved data count.");
             }
             catch (Exception ex)
             {
                 Console.Write(ex.Message);
-                return new BlobStorageResponse<List<SeaSlugValidatedDataCount>>("Unable to retrieve training data count.");
+                return new BlobStorageResponse<List<ValidatedDataCount>>("Unable to retrieve training data count.");
             }
         }
 
@@ -163,7 +163,7 @@ namespace SeaSlugAPI.Services
 
             if (blobStorageConnectionString == string.Empty)
             {
-                return new BlobStorageResponse<Stream>("Unable to upload image.");
+                return new BlobStorageResponse<Stream>("Unable to retrieve data.");
             }
 
             try
@@ -175,36 +175,36 @@ namespace SeaSlugAPI.Services
                 // Get all the blob items
                 var blobItems = blobContainerClient.GetBlobsByHierarchy(delimiter: string.Empty);
 
-                // Create a memory stream to store the compressed data
-                using (var compressedStream = new MemoryStream())
+                var compressedStream = new MemoryStream();
+
+                foreach (var blobItem in blobItems)
                 {
-                    // Create a GZipStream for compressing data asynchronously
+                    var blobClient = blobContainerClient.GetBlobClient(blobItem.Blob.Name);
+                    var blobDownloadInfo = await blobClient.DownloadAsync();
+
+                    // Create a new GZipStream for each image
                     using (var gzipStream = new GZipStream(compressedStream, CompressionLevel.Optimal, true))
                     {
-                        // Iterate over each blob and append its content to the compressed stream
-                        foreach (var blobItem in blobItems)
+                        using (var blobStream = blobDownloadInfo.Value.Content)
                         {
-                            var blobClient = blobContainerClient.GetBlobClient(blobItem.Blob.Name);
-                            var blobDownloadInfo = await blobClient.DownloadAsync();
-
-                            using (var blobStream = blobDownloadInfo.Value.Content)
-                            {
-                                await blobStream.CopyToAsync(gzipStream);
-                                await gzipStream.FlushAsync();
-                            }
+                            // Copy the content of the current image to the GZip stream
+                            await blobStream.CopyToAsync(gzipStream);
                         }
                     }
 
-                    // Rewind the compressed stream to the beginning
-                    compressedStream.Position = 0;
-
-                    return new BlobStorageResponse<Stream>(compressedStream, "Downloaded images successfully.");
+                    // Move the position of the compressed stream to the end
+                    compressedStream.Position = compressedStream.Length;
                 }
+
+                // Rewind the compressed stream to the beginning
+                compressedStream.Position = 0;
+
+                return new BlobStorageResponse<Stream>(compressedStream, "Downloaded images successfully.");
             }
             catch (Exception ex)
             {
                 Console.Write(ex.Message);
-                return new BlobStorageResponse<Stream>("Unable to upload image.");
+                return new BlobStorageResponse<Stream>("Unable to retrieve data.");
             }
         }
 

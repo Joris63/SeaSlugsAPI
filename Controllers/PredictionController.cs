@@ -87,9 +87,9 @@ namespace SeaSlugAPI.Controllers
             try
             {
                 // Check if the image is of type png or jpeg
-                if (!ImageHelper.isValidImageFile(model.Image))
+                if (!ImageHelper.isValidImageFileJPEG(model.Image))
                 {
-                    return BadRequest("Invalid image file type. Only JPEG and PNG are allowed.");
+                    return BadRequest("Invalid image file type. Only JPEG allowed.");
                 }
 
                 // Request prediction from the model in Azure ML Studio

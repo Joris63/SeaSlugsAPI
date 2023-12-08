@@ -16,6 +16,7 @@ namespace SeaSlugAPI.Context
         }
 
         public DbSet<SeaSlug> SeaSlugs { get; set; }
+        public DbSet<TrainingLog> TrainingLogs { get; set; }
     }
 }
 
