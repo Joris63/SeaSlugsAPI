@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
@@ -62,6 +63,13 @@ namespace SeaSlugAPI.Controllers
                 Console.Write(ex.Message);
                 return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
             }
+        }
+
+        [HttpGet]
+        [Route("testkey")]
+        public async Task<IActionResult> TestKey()
+        {
+            return Ok();
         }
 
         /// <summary>

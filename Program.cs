@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using SeaSlugAPI.Authentication;
 using SeaSlugAPI.Context;
 using SeaSlugAPI.Services;
 using System.Reflection;
@@ -92,6 +93,8 @@ app.UseRouting();
 app.UseCors("cors");
 
 app.UseAuthentication();
+
+app.UseMiddleware<ApiKeyAuthMiddleware>();
 
 app.UseAuthorization();
 
