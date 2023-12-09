@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SeaSlugAPI.Entities;
 using SeaSlugAPI.Entities.DTOs;
 using SeaSlugAPI.Models;
 using SeaSlugAPI.Services;
@@ -11,10 +12,12 @@ namespace SeaSlugAPI.Controllers
     public class ModelTrainingController : ControllerBase
     {
         private readonly IBlobStorageService _blobStorageService;
+        private readonly ITrainingLogService _trainingLogService;
 
-        public ModelTrainingController(IBlobStorageService blobStorageService)
+        public ModelTrainingController(IBlobStorageService blobStorageService, ITrainingLogService trainingLogService)
         {
             _blobStorageService = blobStorageService;
+            _trainingLogService = trainingLogService;
         }
 
         /// <summary>
@@ -24,7 +27,34 @@ namespace SeaSlugAPI.Controllers
         [Route("log")]
         public async Task<IActionResult> GetTrainingLog()
         {
-            return Ok();
+            try
+            {
+                // Get latest training log
+                TrainingLogServiceResults results = await _trainingLogService.GetLatest();
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    // Check Data
+                    if (results.Data != null)
+                    {
+                        return Ok(results.Data);
+                    }
+                    else
+                    {
+                        return NotFound(results.Message);
+                    }
+                }
+                else
+                {
+                    return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
 
         /// <summary>
@@ -34,7 +64,40 @@ namespace SeaSlugAPI.Controllers
         [Route("log/{id}")]
         public async Task<IActionResult> GetTrainingLog(string id)
         {
-            return Ok();
+            // Convert the string id to a Guid
+            if (!Guid.TryParse(id, out var trainingLogId))
+            {
+                return BadRequest("Id has to be a valid Guid.");
+            }
+
+            try
+            {
+                // Get training log by id
+                TrainingLogServiceResults results = await _trainingLogService.GetById(trainingLogId);
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    // Check Data
+                    if (results.Data != null)
+                    {
+                        return Ok(results.Data);
+                    }
+                    else
+                    {
+                        return NotFound(results.Message);
+                    }
+                }
+                else
+                {
+                    return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
 
         /// <summary>
@@ -44,7 +107,26 @@ namespace SeaSlugAPI.Controllers
         [Route("log")]
         public async Task<IActionResult> CreateTrainingLog()
         {
-            return Ok();
+            try
+            {
+                // Add training log to the DB
+                TrainingLogServiceResults results = await _trainingLogService.Add();
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    return Ok(results.Data);
+                }
+                else
+                {
+                    return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
 
         /// <summary>
@@ -52,9 +134,36 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpPut]
         [Route("log")]
-        public async Task<IActionResult> EditTraingLog()
+        public async Task<IActionResult> EditTraingLog(EditTrainingLogRequest model)
         {
-            return Ok();
+            try
+            {
+                // Edit training log
+                TrainingLogServiceResults results = await _trainingLogService.Edit(model);
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    // Check Data
+                    if (results.Data != null)
+                    {
+                        return Ok(results.Data);
+                    }
+                    else
+                    {
+                        return NotFound(results.Message);
+                    }
+                }
+                else
+                {
+                    return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
 
         /// <summary>

@@ -22,7 +22,7 @@ namespace SeaSlugAPI.Helpers
                 Id = log.Id,
                 StartDate = log.StartDate,
                 EndDate = log.EndDate,
-                Status = log.Status,
+                Status = log.Status.ToString(),
                 Error = log.Error
             };
         }

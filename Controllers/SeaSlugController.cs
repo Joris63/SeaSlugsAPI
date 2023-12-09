@@ -29,7 +29,7 @@ namespace SeaSlugAPI.Controllers
         {
             try
             {
-                // Add the new sea slug to the DB and create a container for it in the blob storage
+                // Add the new sea slug to the DB
                 SeaSlugServiceResults<SeaSlugDTO> results = await _seaSlugService.Add(model);
 
                 // Check if it succeeded
