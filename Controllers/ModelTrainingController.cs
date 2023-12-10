@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SeaSlugAPI.Authentication;
 using SeaSlugAPI.Entities;
 using SeaSlugAPI.Entities.DTOs;
 using SeaSlugAPI.Models;
@@ -9,6 +10,7 @@ namespace SeaSlugAPI.Controllers
 {
     [Route("api/training")]
     [ApiController]
+    [ServiceFilter(typeof(ApiKeyAuthFilter))]
     public class ModelTrainingController : ControllerBase
     {
         private readonly IBlobStorageService _blobStorageService;

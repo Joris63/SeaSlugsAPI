@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
+using SeaSlugAPI.Authentication;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
 using SeaSlugAPI.Services;
@@ -65,12 +66,7 @@ namespace SeaSlugAPI.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("testkey")]
-        public async Task<IActionResult> TestKey()
-        {
-            return Ok();
-        }
+        
 
         /// <summary>
         /// Predicts the species of all the sea slug images requested.
@@ -87,6 +83,7 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpPost]
         [Route("validate")]
+        [ServiceFilter(typeof(ApiKeyAuthFilter))]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]

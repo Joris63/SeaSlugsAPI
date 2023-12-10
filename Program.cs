@@ -70,6 +70,8 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.Services.AddScoped<ApiKeyAuthFilter>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

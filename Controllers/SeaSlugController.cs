@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SeaSlugAPI.Authentication;
 using SeaSlugAPI.Entities.DTOs;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
@@ -9,6 +10,7 @@ namespace SeaSlugAPI.Controllers
 {
     [Route("api/sea-slugs")]
     [ApiController]
+    [ServiceFilter(typeof(ApiKeyAuthFilter))]
     public class SeaSlugController : ControllerBase
     {
         private readonly ISeaSlugService _seaSlugService;
