@@ -247,5 +247,19 @@ namespace SeaSlugAPI.Controllers
                 return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
             }
         }
+        [HttpGet]
+        [Route("folders")]
+        public async Task<ActionResult<List<string>>> GetImagesWithFolders()
+        {
+            try
+            {
+                List<string> blobUrls = await _blobStorageService.GetBlobUrlsWithFoldersAsync();
+                return Ok(blobUrls);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace SeaSlugAPI.Services
         Task<BlobStorageResponse> UploadBlob(ValidatePredictionRequest model);
         Task<BlobStorageResponse<List<ValidatedDataCount>>> RetrieveTrainingDataCount();
         Task<BlobStorageResponse<Stream>> RetrieveTrainingData();
+        Task<List<string>> GetBlobUrlsWithFoldersAsync();
     }
 
     public class BlobStorageService : IBlobStorageService
@@ -223,6 +224,51 @@ namespace SeaSlugAPI.Services
             var count = blobItemList.Count();
 
             return count;
+        }
+
+        private string GetSpeciesFolder(string blobPath)
+        {
+            // Adjust this logic according to your folder structure
+            string[] pathSegments = blobPath.Split('/'); // Assuming folders are separated by '/'
+
+            // Find and return the species folder
+            foreach (string segment in pathSegments)
+            {
+                if (segment.ToLower().Contains("species")) // Adjust this condition based on your folder structure
+                {
+                    return segment;
+                }
+            }
+
+            return string.Empty; // Or handle if species folder is not found
+        }
+
+        public async Task<List<string>> GetBlobUrlsWithFoldersAsync()
+        {
+            List<string> blobUrls = new List<string>();
+
+            string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
+
+            BlobServiceClient blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
+
+            // Your container name in Azure Blob Storage
+            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient("validated-images");
+
+            var blobItems = containerClient.GetBlobsByHierarchy(delimiter: string.Empty);
+
+            foreach (BlobHierarchyItem blobHierarchyItem in blobItems)
+            {
+                string blobPath = blobHierarchyItem.Blob.Name; // Full path of the blob with folders
+
+                // Adjust this according to your folder structure
+                // Extract the species folder (assuming 'species' is part of the folder structure)
+                string speciesFolder = GetSpeciesFolder(blobPath);
+
+                Uri blobUri = containerClient.GetBlobClient(blobPath).Uri;
+                blobUrls.Add(blobUri.ToString());
+            }
+
+            return blobUrls;
         }
     }
 }
