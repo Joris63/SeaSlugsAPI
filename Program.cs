@@ -65,6 +65,17 @@ builder.Services.AddSwaggerGen(options =>
         Description = "An ASP.NET Core Web API for predicting sea slugs species and managing the sea slug species and AI model",
     });
 
+    options.OperationFilter<ApiKeyOperationFilter>();
+
+    // Add security definition for API key
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Name = AuthConstant.ApiKeyHeaderName,
+        Description = "API Key authentication",
+    });
+
     // using System.Reflection;
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
@@ -96,10 +107,6 @@ app.UseRouting();
 app.UseCors("cors");
 
 app.UseAuthentication();
-
-//app.UseMiddleware<ApiKeyAuthMiddleware>();
-
-//app.UseAuthorization();
 
 app.UseEndpoints(endpoints =>
 {
