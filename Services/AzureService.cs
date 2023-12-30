@@ -7,20 +7,21 @@ using System.Text;
 
 namespace SeaSlugAPI.Services
 {
-    public interface IAzureMLService
+    public interface IAzureService
     {
         Task<PredictionResults> Predict(PredictionRequest model);
         Task<List<PredictionResults>> PredictBatch(BatchPredictionRequest model);
+        Task<TrainingResponse> RequestModelTraining(bool fromScratch = false);
     }
 
-    public class AzureMLService : IAzureMLService
+    public class AzureService : IAzureService
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
         private readonly ISeaSlugService _seaSlugService;
 
-        public AzureMLService(IConfiguration configuration, ISeaSlugService seaSlugService)
+        public AzureService(IConfiguration configuration, ISeaSlugService seaSlugService)
         {
             _httpClient = new HttpClient();
             _configuration = configuration;
@@ -112,6 +113,43 @@ namespace SeaSlugAPI.Services
         public async Task<List<PredictionResults>> PredictBatch(BatchPredictionRequest model)
         {
             return new List<PredictionResults>();
+        }
+
+        public async Task<TrainingResponse> RequestModelTraining(bool fromScratch = false)
+        {
+            // Get the realtime endpoint and key of the deployed model from secrets
+            string endpoint = fromScratch ? (_configuration["RetrainingTriggerEndpoint"] ?? string.Empty) : (_configuration["TrainingTriggerEndpoint"] ?? string.Empty);
+
+            if (endpoint == string.Empty)
+            {
+                return new TrainingResponse("Could not start the training process. Please try again later.");
+            }
+
+            try
+            {
+                HttpRequestMessage httpRequestMessage = new HttpRequestMessage()
+                {
+                    Method = HttpMethod.Post,
+                    RequestUri = new Uri(endpoint),
+                };
+
+                HttpResponseMessage httpResponse = await _httpClient.SendAsync(httpRequestMessage);
+
+                // Check the response status
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    return new TrainingResponse(true, "Started the training process.");
+                }
+                else
+                {
+                    return new TrainingResponse("Could not start the training process. Please try again later.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return new TrainingResponse("Could not start the training process. Please try again later.");
+            }
         }
     }
 }

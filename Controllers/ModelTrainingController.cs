@@ -15,11 +15,13 @@ namespace SeaSlugAPI.Controllers
     {
         private readonly IBlobStorageService _blobStorageService;
         private readonly ITrainingLogService _trainingLogService;
+        private readonly IAzureService _azureService;
 
-        public ModelTrainingController(IBlobStorageService blobStorageService, ITrainingLogService trainingLogService)
+        public ModelTrainingController(IBlobStorageService blobStorageService, ITrainingLogService trainingLogService, IAzureService azureService)
         {
             _blobStorageService = blobStorageService;
             _trainingLogService = trainingLogService;
+            _azureService = azureService;
         }
 
         /// <summary>
@@ -27,6 +29,9 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpGet]
         [Route("log")]
+        [ProducesResponseType(typeof(TrainingLogDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetTrainingLog()
         {
             try
@@ -64,6 +69,9 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpGet]
         [Route("log/{id}")]
+        [ProducesResponseType(typeof(TrainingLogDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetTrainingLog(string id)
         {
             // Convert the string id to a Guid
@@ -107,6 +115,8 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpPost]
         [Route("log")]
+        [ProducesResponseType(typeof(TrainingLogDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateTrainingLog()
         {
             try
@@ -136,6 +146,9 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpPut]
         [Route("log")]
+        [ProducesResponseType(typeof(TrainingLogDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> EditTraingLog(EditTrainingLogRequest model)
         {
             try
@@ -172,9 +185,30 @@ namespace SeaSlugAPI.Controllers
         /// Starts the training of the AI model using the validated data.
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> StartTraining()
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> StartTraining(bool fromScratch)
         {
-            return Ok();
+            try
+            {
+                // Start the training process
+                TrainingResponse results = await _azureService.RequestModelTraining(fromScratch);
+
+                // Check if it succeeded
+                if (results.Success)
+                {
+                    return Ok(results.Message);
+                }
+                else
+                {
+                    return StatusCode(500, results.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
+            }
         }
 
         /// <summary>
@@ -182,6 +216,9 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpGet]
         [Route("data-count")]
+        [ProducesResponseType(typeof(List<ValidatedDataCount>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetTrainingDataCount()
         {
             try
@@ -219,6 +256,9 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpGet]
         [Route("retraining-files")]
+        [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetRetrainingDataFiles()
         {
             try
@@ -248,6 +288,9 @@ namespace SeaSlugAPI.Controllers
         /// </summary>
         [HttpGet]
         [Route("training-files")]
+        [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetTrainingDataFiles()
         {
             try

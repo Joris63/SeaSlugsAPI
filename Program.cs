@@ -47,7 +47,7 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 builder.Services.AddSingleton<IConfiguration>(configuration);
-builder.Services.AddScoped<IAzureMLService, AzureMLService>();
+builder.Services.AddScoped<IAzureService, AzureService>();
 builder.Services.AddScoped<ISeaSlugService, SeaSlugService>();
 builder.Services.AddScoped<ITrainingLogService, TrainingLogService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();

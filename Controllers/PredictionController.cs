@@ -12,10 +12,10 @@ namespace SeaSlugAPI.Controllers
     [ApiController]
     public class PredictionController : ControllerBase
     {
-        private readonly IAzureMLService _azureMLService;
+        private readonly IAzureService _azureMLService;
         private readonly IBlobStorageService _blobStorageService;
 
-        public PredictionController(IAzureMLService azureMLService, IBlobStorageService blobStorageService)
+        public PredictionController(IAzureService azureMLService, IBlobStorageService blobStorageService)
         {
             _azureMLService = azureMLService;
             _blobStorageService = blobStorageService;
