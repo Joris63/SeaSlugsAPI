@@ -11,7 +11,6 @@ namespace SeaSlugAPI.Services
     {
         Task<PredictionResults> Predict(PredictionRequest model);
         Task<List<PredictionResults>> PredictBatch(BatchPredictionRequest model);
-        Task<string> GetTrainingStatus();
     }
 
     public class AzureMLService : IAzureMLService
@@ -113,11 +112,6 @@ namespace SeaSlugAPI.Services
         public async Task<List<PredictionResults>> PredictBatch(BatchPredictionRequest model)
         {
             return new List<PredictionResults>();
-        }
-
-        public async Task<string> GetTrainingStatus()
-        {
-            return string.Empty;
         }
     }
 }

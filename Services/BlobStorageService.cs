@@ -12,8 +12,8 @@ namespace SeaSlugAPI.Services
         Task<BlobStorageResponse> CreateContainer(string name);
         Task<BlobStorageResponse> UploadBlob(ValidatePredictionRequest model);
         Task<BlobStorageResponse<List<ValidatedDataCount>>> RetrieveTrainingDataCount();
-        Task<BlobStorageResponse<Stream>> RetrieveTrainingData();
-        Task<List<string>> GetBlobUrlsWithFoldersAsync();
+        Task<BlobStorageResponse<List<string>>> RetrieveRetrainingData();
+        Task<BlobStorageResponse<List<string>>> RetrieveTrainingData();
     }
 
     public class BlobStorageService : IBlobStorageService
@@ -157,71 +157,102 @@ namespace SeaSlugAPI.Services
             }
         }
 
-        public async Task<BlobStorageResponse<Stream>> RetrieveTrainingData()
+        public async Task<BlobStorageResponse<List<string>>> RetrieveTrainingData()
         {
             // Get the blob storage endpoint
             string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
 
             if (blobStorageConnectionString == string.Empty)
             {
-                return new BlobStorageResponse<Stream>("Unable to retrieve data.");
+                return new BlobStorageResponse<List<string>>("Unable to retrieve data.");
             }
 
             try
             {
+
+                List<string> blobUrls = new List<string>();
+
                 // Get the blob service client
                 var blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
                 var blobContainerClient = blobServiceClient.GetBlobContainerClient("validated-images");
 
-                // Get all the blob items
                 var blobItems = blobContainerClient.GetBlobsByHierarchy(delimiter: string.Empty);
 
-                var compressedStream = new MemoryStream();
-
-                foreach (var blobItem in blobItems)
+                foreach (BlobHierarchyItem blobHierarchyItem in blobItems)
                 {
-                    var blobClient = blobContainerClient.GetBlobClient(blobItem.Blob.Name);
-                    var blobDownloadInfo = await blobClient.DownloadAsync();
+                    string blobPath = blobHierarchyItem.Blob.Name; // Full path of the blob with folders
 
-                    // Create a new GZipStream for each image
-                    using (var gzipStream = new GZipStream(compressedStream, CompressionLevel.Optimal, true))
-                    {
-                        using (var blobStream = blobDownloadInfo.Value.Content)
-                        {
-                            // Copy the content of the current image to the GZip stream
-                            await blobStream.CopyToAsync(gzipStream);
-                        }
-                    }
+                    // Adjust this according to your folder structure
+                    // Extract the species folder (assuming 'species' is part of the folder structure)
+                    string speciesFolder = GetSpeciesFolder(blobPath);
 
-                    // Move the position of the compressed stream to the end
-                    compressedStream.Position = compressedStream.Length;
+                    Uri blobUri = blobContainerClient.GetBlobClient(blobPath).Uri;
+                    blobUrls.Add(blobUri.ToString());
                 }
 
-                // Rewind the compressed stream to the beginning
-                compressedStream.Position = 0;
-
-                return new BlobStorageResponse<Stream>(compressedStream, "Downloaded images successfully.");
+                return new BlobStorageResponse<List<string>>(blobUrls, "Retrieved images successfully."); ;
             }
             catch (Exception ex)
             {
                 Console.Write(ex.Message);
-                return new BlobStorageResponse<Stream>("Unable to retrieve data.");
+                return new BlobStorageResponse<List<string>>("Unable to retrieve data.");
+            }
+        }
+
+        public async Task<BlobStorageResponse<List<string>>> RetrieveRetrainingData()
+        {
+            // Get the blob storage endpoint
+            string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
+
+            if (blobStorageConnectionString == string.Empty)
+            {
+                return new BlobStorageResponse<List<string>>("Unable to retrieve data.");
+            }
+
+            try
+            {
+
+                List<string> blobUrls = new List<string>();
+
+                // Get the blob service client
+                var blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
+                var blobContainerClient = blobServiceClient.GetBlobContainerClient("slug-images");
+
+                var blobItems = blobContainerClient.GetBlobsByHierarchy(delimiter: string.Empty);
+
+                foreach (BlobHierarchyItem blobHierarchyItem in blobItems)
+                {
+                    string blobPath = blobHierarchyItem.Blob.Name; // Full path of the blob with folders
+
+                    // Adjust this according to your folder structure
+                    // Extract the species folder (assuming 'species' is part of the folder structure)
+                    string speciesFolder = GetSpeciesFolder(blobPath);
+
+                    Uri blobUri = blobContainerClient.GetBlobClient(blobPath).Uri;
+                    blobUrls.Add(blobUri.ToString());
+                }
+
+                return new BlobStorageResponse<List<string>>(blobUrls, "Retrieved images successfully."); ;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return new BlobStorageResponse<List<string>>("Unable to retrieve data.");
             }
         }
 
         private async Task<int> GetBlobCount(BlobContainerClient containerClient, string folderPath)
         {
-            var blobItems = containerClient.GetBlobsByHierarchy(delimiter: "/", prefix: folderPath);
+            var blobItems = containerClient.GetBlobsByHierarchy(delimiter: string.Empty, prefix: $"{folderPath}/");
 
-            // Enumerate the blob items to ensure the sequence is evaluated
-            var blobItemList = blobItems.ToList();
-
-            if (blobItemList == null || !blobItemList.Any())
+            // Directly check if there are any blob items
+            if (!blobItems.Any())
             {
                 return 0; // If no blobs exist
             }
 
-            var count = blobItemList.Count();
+            // Count the blobs without materializing the list
+            var count = blobItems.Count();
 
             return count;
         }
@@ -241,34 +272,6 @@ namespace SeaSlugAPI.Services
             }
 
             return string.Empty; // Or handle if species folder is not found
-        }
-
-        public async Task<List<string>> GetBlobUrlsWithFoldersAsync()
-        {
-            List<string> blobUrls = new List<string>();
-
-            string blobStorageConnectionString = _configuration["BlobStorageConnectionString"] ?? string.Empty;
-
-            BlobServiceClient blobServiceClient = new BlobServiceClient(blobStorageConnectionString);
-
-            // Your container name in Azure Blob Storage
-            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient("validated-images");
-
-            var blobItems = containerClient.GetBlobsByHierarchy(delimiter: string.Empty);
-
-            foreach (BlobHierarchyItem blobHierarchyItem in blobItems)
-            {
-                string blobPath = blobHierarchyItem.Blob.Name; // Full path of the blob with folders
-
-                // Adjust this according to your folder structure
-                // Extract the species folder (assuming 'species' is part of the folder structure)
-                string speciesFolder = GetSpeciesFolder(blobPath);
-
-                Uri blobUri = containerClient.GetBlobClient(blobPath).Uri;
-                blobUrls.Add(blobUri.ToString());
-            }
-
-            return blobUrls;
         }
     }
 }

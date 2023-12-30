@@ -215,30 +215,25 @@ namespace SeaSlugAPI.Controllers
         }
 
         /// <summary>
-        /// Retrieves the data files for each species that the AI will train on.
+        /// Retrieves the validated data files to further train the current AI model.
         /// </summary>
         [HttpGet]
-        [Route("data-files")]
-        public async Task<IActionResult> GetTrainingDataFiles()
+        [Route("retraining-files")]
+        public async Task<IActionResult> GetRetrainingDataFiles()
         {
             try
             {
                 // Get the training data count per sea slug
-                BlobStorageResponse<Stream> results = await _blobStorageService.RetrieveTrainingData();
+                BlobStorageResponse<List<string>> results = await _blobStorageService.RetrieveRetrainingData();
 
                 // Check if it succeeded
                 if (results.Success && results.Data != null)
                 {
-                    // Set appropriate response headers
-                    Response.Headers.Append("Content-Encoding", "gzip");
-                    Response.Headers.Append("Content-Type", "image.jpeg");
-
-                    // Return the ZIP stream using FileStreamResult
-                    return new FileStreamResult(results.Data, "image/jpeg");
+                    return Ok(results.Data);
                 }
                 else
                 {
-                    return BadRequest(results.Message);
+                    return StatusCode(500, results.Message);
                 }
             }
             catch (Exception ex)
@@ -247,18 +242,33 @@ namespace SeaSlugAPI.Controllers
                 return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
             }
         }
+
+        /// <summary>
+        /// Retrieves the data files for each species to retrain the AI model from scratch.
+        /// </summary>
         [HttpGet]
-        [Route("folders")]
-        public async Task<ActionResult<List<string>>> GetImagesWithFolders()
+        [Route("training-files")]
+        public async Task<IActionResult> GetTrainingDataFiles()
         {
             try
             {
-                List<string> blobUrls = await _blobStorageService.GetBlobUrlsWithFoldersAsync();
-                return Ok(blobUrls);
+                // Get the training data count per sea slug
+                BlobStorageResponse<List<string>> results = await _blobStorageService.RetrieveTrainingData();
+
+                // Check if it succeeded
+                if (results.Success && results.Data != null)
+                {
+                    return Ok(results.Data);
+                }
+                else
+                {
+                    return StatusCode(500, results.Message);
+                }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                Console.Write(ex.Message);
+                return StatusCode(500, "An unexpected error occurred on the server. Please try again later.");
             }
         }
     }
