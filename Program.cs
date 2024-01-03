@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -8,23 +9,29 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-IConfiguration configuration = new ConfigurationBuilder()
+IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
     .SetBasePath(builder.Environment.ContentRootPath)
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddUserSecrets<Program>()
-    .AddEnvironmentVariables()
-    .Build();
+    .AddEnvironmentVariables();
+
+if (builder.Environment.IsProduction())
+{
+    configurationBuilder.AddAzureKeyVault(new Uri("https://sea-slugs-api-keys.vault.azure.net/"), new DefaultAzureCredential());
+}
+
+IConfiguration configuration = configurationBuilder.Build();
 
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(configuration["DBConnectionString"],
-        sqlServerOptionsAction: sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(60),
-                errorNumbersToAdd: null);
-        }));
+    sqlServerOptionsAction: sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    }));
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -84,12 +91,8 @@ builder.Services.AddScoped<ApiKeyAuthFilter>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 using (var scope = app.Services.CreateScope())
 {

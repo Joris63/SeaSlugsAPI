@@ -3,6 +3,7 @@ using SeaSlugAPI.Entities.DTOs;
 using SeaSlugAPI.Helpers;
 using SeaSlugAPI.Models;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 
 namespace SeaSlugAPI.Services
@@ -26,6 +27,8 @@ namespace SeaSlugAPI.Services
             _httpClient = new HttpClient();
             _configuration = configuration;
             _seaSlugService = seaSlugService;
+
+            _httpClient.Timeout = TimeSpan.FromSeconds(500);
         }
 
         public async Task<PredictionResults> Predict(PredictionRequest model)
