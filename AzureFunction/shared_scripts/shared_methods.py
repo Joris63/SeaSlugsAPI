@@ -139,18 +139,12 @@ def deploy_endpoint(ml_client, model):
 
     online_endpoint_name = "sea-slug-endpoint"
 
-    try:
-        endpoint = ml_client.online_endpoints.get(name=online_endpoint_name)
-    except Exception as e:
-        print(f"Error while retrieving endpoint: {e}")
+    endpoint = ManagedOnlineEndpoint(
+        name=online_endpoint_name,
+        auth_mode="key"
+    )
 
-        endpoint = ManagedOnlineEndpoint(
-            name=online_endpoint_name,
-            auth_mode="key"
-        )
-
-        ml_client.begin_create_or_update(endpoint)
-
+    ml_client.begin_create_or_update(endpoint)
 
     model_deployment = ManagedOnlineDeployment(
         name="deployment",
